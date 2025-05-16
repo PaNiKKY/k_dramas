@@ -1,0 +1,10 @@
+webdriver-manager
+selenium
+tqdm
+pydantic
+pandas
+boto3
+apache-airflow
+apache-airflow-providers-apache-spark
+# psycopg2-binary
+# asyncpg

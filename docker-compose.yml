@@ -1,0 +1,134 @@
+x-airflow-common:
+  &airflow-common
+  build: 
+    context: .
+    args:
+      - NODE_ENV=local
+    dockerfile: Dockerfile_airflow
+  environment:
+    &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    # AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    # AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth'
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./logs:/opt/airflow/logs
+    - ./etl:/opt/airflow/etl
+    - ./src:/opt/airflow/src
+    - ./.env:/opt/airflow/.env
+
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+  depends_on:
+    postgres:
+      condition: service_healthy
+
+x-spark-common:
+  &spark-common
+  build:
+    context: .
+    dockerfile: Dockerfile_spark
+  volumes:
+  #   # - ./workdir:/opt/spark/work-dir
+    - ./etl:/opt/spark/etl
+    - ./src:/opt/spark/src
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8974/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+
+  spark-master:
+    <<: *spark-common
+    container_name: spark-master
+    command: ./notebook.sh
+    entrypoint: ['./entrypoint.sh', 'master']
+    # healthcheck:
+    #   test: [ "CMD", "curl", "-f", "http://localhost:8090" ]
+    #   interval: 5s
+    #   timeout: 3s
+    #   retries: 3
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      # - SPARK_LOCAL_IP=spark-master
+    ports:
+      - '8090:8080'
+      - '7077:7077'
+      - '4040:4040'
+      - '8888:8888'
+
+  spark-worker:
+    <<: *spark-common
+    # container_name: spark-worker
+    depends_on:
+      - spark-master
+    entrypoint: ['./entrypoint.sh', 'worker']
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+      - "SPARK_WORKER_CORES=2"
+      - "SPARK_WORKER_MEMORY=2G"
+      - "SPARK_DRIVER_MEMORY=2G"
+      - "SPARK_EXECUTOR_MEMORY=2G"
+      # - SPARK_LOCAL_IP=spark-worker-*
+
+  spark-history-server:
+    <<: *spark-common
+    container_name: spark-history
+    depends_on:
+      - spark-master
+    entrypoint: ['./entrypoint.sh', 'history']
+    environment:
+      - SPARK_NO_DAEMONIZE=true
+    volumes:
+      - ./logs:/opt/spark/spark-events
+
+volumes:
+  postgres-db-volume:

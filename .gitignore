@@ -1,0 +1,6 @@
+*.env
+script.txt
+test.ipynb
+airflow_metadata/
+logs/
+venv/

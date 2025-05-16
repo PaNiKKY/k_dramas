@@ -1,0 +1,32 @@
+FROM apache/spark:3.5.5-python3
+
+USER root
+
+RUN apt-get update \
+  && apt install unzip -y\
+  && apt-get install -y --no-install-recommends \
+         vim gnupg2 libnss3-dev wget\
+  && apt-get autoremove -yqq --purge \
+  && apt-get clean \
+  && rm -rf /var/lib/apt/lists/* 
+  
+COPY requirements_spark.txt .
+RUN pip3 install --no-cache-dir -r requirements_spark.txt
+
+ENV PATH="/opt/spark/sbin:/opt/spark/bin:${PATH}"
+ENV SPARK_HOME="/opt/spark"
+ENV SPARK_MASTER="spark://spark-master:7077"
+ENV SPARK_MASTER_HOST spark-master
+ENV SPARK_MASTER_PORT 7077
+ENV PYSPARK_PYTHON python3
+
+RUN chmod u+x /opt/spark/sbin/* && \
+    chmod u+x /opt/spark/bin/*
+
+ENV PYTHONPATH=$SPARK_HOME/python/:$PYTHONPATH
+
+WORKDIR /
+
+COPY entrypoint.sh .
+
+ENTRYPOINT ["./entrypoint.sh"]
