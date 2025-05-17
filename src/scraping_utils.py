@@ -21,8 +21,8 @@ def get_driver():
     options.add_argument("--disable-gpu")
     options.add_argument(f'--user-agent={user_agent}')
     options.add_experimental_option("detach", True)
-    # options.add_argument("--window-size=1920,1080")
-    # options.add_argument("--start-maximized")
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--start-maximized")
 
     # driver = webdriver.Chrome(options=options)
 
@@ -127,7 +127,7 @@ def get_episode(url, nav_button, driver):
     try:
         nav_button.click()
         time.sleep(1)
-
+        # driver.save_screenshot("/opt/airflow/etl/screenshot2.png")
         nav_bars = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "nav-tabs"))
         ).find_elements(By.TAG_NAME, "li")[2]
@@ -148,7 +148,7 @@ def get_cast(url, nav_button, driver):
     try:
         nav_button.click()
         time.sleep(1)
-
+        # driver.save_screenshot("/opt/airflow/etl/screenshot3.png")
         nav_bars = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "nav-tabs"))
         ).find_elements(By.TAG_NAME, "li")[3]
@@ -175,6 +175,7 @@ def get_reviews(url, nav_button, driver):
     try:
         nav_button.click()
         time.sleep(1)
+        # driver.save_screenshot("/opt/airflow/etl/screenshot4.png")
         try:
             get_header = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CLASS_NAME, "container-fluid"))
@@ -194,7 +195,7 @@ def get_drama_data(url, driver):
     try:
         driver.get(url)
         time.sleep(1)
-        # driver.save_screenshot("screenshot.png")
+        # driver.save_screenshot("/opt/airflow/etl/screenshot1.png")
         nav_bars = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "nav-tabs"))
         ).find_elements(By.TAG_NAME, "li")
