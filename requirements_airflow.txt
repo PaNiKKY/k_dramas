@@ -4,7 +4,7 @@ tqdm
 pydantic
 pandas
 boto3
-apache-airflow
+apache-airflow==2.9.2
 apache-airflow-providers-apache-spark
 # psycopg2-binary
 # asyncpg

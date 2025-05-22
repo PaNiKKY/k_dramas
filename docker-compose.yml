@@ -86,49 +86,49 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
 
-  spark-master:
-    <<: *spark-common
-    container_name: spark-master
-    command: ./notebook.sh
-    entrypoint: ['./entrypoint.sh', 'master']
-    # healthcheck:
-    #   test: [ "CMD", "curl", "-f", "http://localhost:8090" ]
-    #   interval: 5s
-    #   timeout: 3s
-    #   retries: 3
-    environment:
-      - SPARK_NO_DAEMONIZE=true
-      # - SPARK_LOCAL_IP=spark-master
-    ports:
-      - '8090:8080'
-      - '7077:7077'
-      - '4040:4040'
-      - '8888:8888'
+  # spark-master:
+  #   <<: *spark-common
+  #   container_name: spark-master
+  #   command: ./notebook.sh
+  #   entrypoint: ['./entrypoint.sh', 'master']
+  #   # healthcheck:
+  #   #   test: [ "CMD", "curl", "-f", "http://localhost:8090" ]
+  #   #   interval: 5s
+  #   #   timeout: 3s
+  #   #   retries: 3
+  #   environment:
+  #     - SPARK_NO_DAEMONIZE=true
+  #     # - SPARK_LOCAL_IP=spark-master
+  #   ports:
+  #     - '8090:8080'
+  #     - '7077:7077'
+  #     - '4040:4040'
+  #     - '8888:8888'
 
-  spark-worker:
-    <<: *spark-common
-    # container_name: spark-worker
-    depends_on:
-      - spark-master
-    entrypoint: ['./entrypoint.sh', 'worker']
-    environment:
-      - SPARK_NO_DAEMONIZE=true
-      - "SPARK_WORKER_CORES=2"
-      - "SPARK_WORKER_MEMORY=2G"
-      - "SPARK_DRIVER_MEMORY=2G"
-      - "SPARK_EXECUTOR_MEMORY=2G"
-      # - SPARK_LOCAL_IP=spark-worker-*
+  # spark-worker:
+  #   <<: *spark-common
+  #   # container_name: spark-worker
+  #   depends_on:
+  #     - spark-master
+  #   entrypoint: ['./entrypoint.sh', 'worker']
+  #   environment:
+  #     - SPARK_NO_DAEMONIZE=true
+  #     - "SPARK_WORKER_CORES=2"
+  #     - "SPARK_WORKER_MEMORY=2G"
+  #     - "SPARK_DRIVER_MEMORY=2G"
+  #     - "SPARK_EXECUTOR_MEMORY=2G"
+  #     # - SPARK_LOCAL_IP=spark-worker-*
 
-  spark-history-server:
-    <<: *spark-common
-    container_name: spark-history
-    depends_on:
-      - spark-master
-    entrypoint: ['./entrypoint.sh', 'history']
-    environment:
-      - SPARK_NO_DAEMONIZE=true
-    volumes:
-      - ./logs:/opt/spark/spark-events
+  # spark-history-server:
+  #   <<: *spark-common
+  #   container_name: spark-history
+  #   depends_on:
+  #     - spark-master
+  #   entrypoint: ['./entrypoint.sh', 'history']
+  #   environment:
+  #     - SPARK_NO_DAEMONIZE=true
+  #   volumes:
+  #     - ./logs:/opt/spark/spark-events
 
 volumes:
   postgres-db-volume:

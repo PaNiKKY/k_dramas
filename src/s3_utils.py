@@ -70,3 +70,5 @@ def read_json_from_s3(bucket: str, zone: str, file_name: str):
         return f"Error reading {file_name} from s3 error: {e}"
     else:
         return data
+
+# create_s3_bucket("k-dramas-bucket")

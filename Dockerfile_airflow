@@ -19,4 +19,5 @@ COPY requirements_airflow.txt /opt/airflow/requirements.txt
 
 USER airflow
 
+RUN pip install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt

@@ -8,6 +8,10 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from etl.extract import extract_data, get_drama_links
 from src.s3_utils import read_json_from_s3, write_json_to_s3
 
+sep = 6
+
+years = 0
+
 @dag(
     dag_id="dramas_detail_dag",
     schedule="@monthly",
@@ -28,9 +32,9 @@ def dramas_detail_dag():
         return link_dict["links"]
     
     @task
-    def sep_list(link: list, sep: int, i: int):
-        sep = [(len(link)//sep)*i, (len(link)//sep)*(i+1)]
-        if i == 2:
+    def sep_list(link: list, sep_num: int, i: int):
+        sep = [(len(link)//sep_num)*i, (len(link)//sep_num)*(i+1)]
+        if i == sep_num-1:
             sep[1] = len(link)
         return link[sep[0]:sep[1]]
 
@@ -38,16 +42,16 @@ def dramas_detail_dag():
     def extract_drama_details_task(link_dict: list, bucket_name: str, folder_name: str, strat_year: int, end_year: int, i: int):
         details_list = extract_data(link_dict)
 
-        details_dict = {"dramas": details_list, "total": len(details_list), "date": datetime.now()}
+        details_dict = {"dramas": details_list, "total": len(details_list), "date": datetime.now().strftime("%Y-%m-%d")}
 
         write_json_to_s3(details_dict, bucket_name, folder_name, f"drama_details_{strat_year}_{end_year}_{i}.json")
 
     link_dict = load_drama_links_task(2000, 2014, "k-dramas-bucket", "raw")
-    for years in range(3):
-        sep_link = sep_list(link_dict, 3, years)
+    # for years in range(3):
+    sep_link = sep_list(link_dict, sep, years)
         # link_dict = load_drama_links_task(years[0], years[1], "k-dramas-bucket", "raw")
 
-        extract_drama_details_task(sep_link, "k-dramas-bucket", "raw", 2000, 2014, years)
+    extract_drama_details_task(sep_link, "k-dramas-bucket", "raw", 2000, 2014, years)
 
 
 dramas_detail_dag()
